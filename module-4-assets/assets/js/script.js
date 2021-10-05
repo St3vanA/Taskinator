@@ -5,6 +5,8 @@ var tasksToDoEl = document.querySelector("#tasks-to-do");
 var tasksInProgressEl = document.querySelector("#tasks-in-progress");
 var tasksCompletedEl = document.querySelector("#tasks-completed");
 var pageContentEl = document.querySelector("#page-content");
+
+
 var tasks = [];
 
 var taskFormHandler = function(event) {
@@ -30,8 +32,8 @@ var taskFormHandler = function(event) {
         else {
         var taskDataObj = {
           name: taskNameInput,
-          type: taskTypeInput
-          status: "to do"
+          type: taskTypeInput,
+          status: "to do",
         };
       
         createTaskEl(taskDataObj);
@@ -47,16 +49,32 @@ var taskFormHandler = function(event) {
         taskInfoEl.className = "task-info";
         taskInfoEl.innerHTML = "<h3 class='task-name'>" + taskDataObj.name + "</h3><span class='task-type'>" + taskDataObj.type + "</span>";
         listItemEl.appendChild(taskInfoEl);
-
-        taskDataObj.id = taskIdCounter;
-
-        tasks.push(taskDataObj);
-
-        saveTasks();
         
         var taskActionsEl = createTaskActions(taskIdCounter);
         listItemEl.appendChild(taskActionsEl);
-        tasksToDoEl.appendChild(listItemEl); 
+
+        switch (taskDataObj.status) {
+            case "to do":
+              taskActionsEl.querySelector("select[name='status-change']").selectedIndex = 0;
+              tasksToDoEl.append(listItemEl);
+              break;
+            case "in progress":
+              taskActionsEl.querySelector("select[name='status-change']").selectedIndex = 1;
+              tasksInProgressEl.append(listItemEl);
+              break;
+            case "completed":
+              taskActionsEl.querySelector("select[name='status-change']").selectedIndex = 2;
+              tasksCompletedEl.append(listItemEl);
+              break;
+            default:
+              console.log("Something went wrong!");
+          }
+
+        taskDataObj.id = taskIdCounter;
+        
+        tasks.push(taskDataObj);
+        
+        saveTasks();
     
         taskIdCounter++;
     };
@@ -109,16 +127,16 @@ var createTasksActions = function(taskId) {
               tasks[i].name = taskName;
               tasks[i].type = taskType;
             }
-          };
+          }
+          
+          alert("Task Updated!");
+
+          // remove data attribute from form
+          formEl.removeAttribute("data-task-id");
+          // update formEl button to go back to saying "Add Task" instead of "Edit Task"
+          formEl.querySelector("#save-task").textContent = "Add Task";
           saveTasks();
-      
-        alert("Task Updated!");
-      
-        // remove data attribute from form
-        formEl.removeAttribute("data-task-id");
-        // update formEl button to go back to saying "Add Task" instead of "Edit Task"
-        formEl.querySelector("#save-task").textContent = "Add Task";
-    };
+      };
     
     var taskButtonHandler = function(event) {
         var targetEl = event.target;
@@ -156,6 +174,7 @@ var createTasksActions = function(taskId) {
                   tasks[i].status = statusValue;
                 }
               }
+              
               saveTasks();
           };
 
@@ -201,10 +220,32 @@ saveTasks();
 
 var saveTasks = function () {
     localStorage.setItem("tasks", JSON.stringify(tasks));
-}
+};
+
+var loadTasks = function() {
+    var savedTasks = localStorage.getItem("tasks");
+    // if there are no tasks, set tasks to an empty array and return out of the function
+    if (!savedTasks) {
+      return false;
+    }
+    console.log("Saved tasks found!");
+    // else, load up saved tasks
+  
+    // parse into array of objects
+    savedTasks = JSON.parse(savedTasks);
+  
+    // loop through savedTasks array
+    for (var i = 0; i < savedTasks.length; i++) {
+      // pass each task object into the `createTaskEl()` function
+      createTaskEl(savedTasks[i]);
+    }
+  };
+
 
   formEl.addEventListener("submit", taskFormHandler);
 
   pageContentEl.addEventListener("click", taskButtonHandler);
 
   pageContentEl.addEventListener("change", taskStatusChangeHandler);
+
+  loadTasks();
